@@ -91,7 +91,7 @@ def ensure_fork(login: str) -> str:
         ["gh", "repo", "view", fork_repo, "--json", "parent,isFork"], check=False
     )
     if view.returncode != 0:
-        print(f"[fork] creating {fork_repo}")
+        print(f"[fork] {fork_repo} not found; creating it")
         run(
             [
                 "gh",
@@ -112,7 +112,13 @@ def ensure_fork(login: str) -> str:
         )
     # Bring the fork's master up to date so the PR diff only shows our change.
     # This writes to the fork, never to upstream.
-    run(["gh", "repo", "sync", fork_repo, "--branch", UPSTREAM_BRANCH])
+    sync = run(
+        ["gh", "repo", "sync", fork_repo, "--branch", UPSTREAM_BRANCH], check=False
+    )
+    if sync.returncode != 0:
+        # Not fatal: the branch is cut from upstream/master anyway. A stale fork
+        # master only makes the PR diff noisier. Use "Sync fork" on GitHub to fix.
+        print(f"[fork] warning: could not sync {fork_repo}: {sync.stderr.strip()}")
     return fork_repo
 
 

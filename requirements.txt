@@ -2,3 +2,4 @@ claude-agent-sdk>=0.2.170
 ruff
 ty
 pre-commit
+pytest

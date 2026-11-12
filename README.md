@@ -56,37 +56,62 @@ the required characters exceed the length.
 - **Everything is logged.** The transcript, tool audit log, diff and PR body make each
   run reviewable after the fact.
 
-## Setup (Windows / PowerShell)
+## Run it in Docker (recommended)
+
+The image contains Python, git, the GitHub CLI, free-threaded Python 3.15t,
+and the Claude Agent SDK, which bundles its own Claude Code binary. Your
+machine only needs Docker Desktop; Claude Code is never installed on it.
+Running in a container is also one more layer of isolation: the agent can
+only see this project folder and its own workspace volume.
+
+**1. Credentials.** Copy `.env.example` to `.env` and fill it in. `.env` is gitignored.
+- `ANTHROPIC_API_KEY`: from console.anthropic.com. A run costs well under $1.
+- `GH_TOKEN` (not needed for `--local-only`): least privilege, so the token can
+  only touch your fork:
+  1. Fork TheAlgorithms/Python in the browser (Fork button). Keep "copy the
+     master branch only" checked.
+  2. GitHub → Settings → Developer settings → Fine-grained tokens → Generate.
+     Repository access: *Only select repositories* → `<you>/Python`.
+     Permissions: **Contents: Read and write**, **Pull requests: Read and write**.
+     Set a short expiration.
+- `GIT_USER_EMAIL`: your GitHub noreply address (Settings → Emails).
+
+**2. Build** (once, and again after changing `requirements.txt` or the Dockerfile):
 
 ```powershell
-# Prereqs: Python 3.10+, git, GitHub CLI, Claude Code CLI
-winget install GitHub.cli
-gh auth login
-irm https://claude.ai/install.ps1 | iex     # Claude Code (the SDK drives it)
+docker build -t contrib-agent .
+```
 
-cd contrib-agent
+**3. Run** from the project folder:
+
+```powershell
+docker run --rm --env-file .env -v "${PWD}:/app" -v contrib-work:/work contrib-agent --local-only
+docker run --rm --env-file .env -v "${PWD}:/app" -v contrib-work:/work contrib-agent --dry-run
+docker run --rm --env-file .env -v "${PWD}:/app" -v contrib-work:/work contrib-agent
+```
+
+The first is practice with no GitHub account involved, the second commits on
+your fork's branch without pushing, and the third pushes and opens the PR on
+your fork. Add `--model claude-sonnet-5-5` at the end for a cheaper model.
+Run artifacts appear in `runs/` on your machine; the TheAlgorithms clone stays
+in the `contrib-work` volume (`docker volume rm contrib-work` to reset it).
+
+## Run it without Docker
+
+Needs Python 3.10+, git and the GitHub CLI on your machine. Note that
+`pip install claude-agent-sdk` puts its bundled Claude Code binary in your
+Python environment.
+
+```powershell
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-
-# Optional, to match CONTRIBUTING.md's "free-threaded Python 3.15t+":
-#   install 3.15 from python.org and tick "free-threaded binaries".
-#   The checks use py -3.15t automatically if present.
-
-$env:ANTHROPIC_API_KEY = "sk-ant-..."     # or be logged in to Claude Code
+gh auth login
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+python agent.py --local-only    # or --dry-run, or no flag for the live run
 ```
 
-On Linux/SSH, use `python3 -m venv .venv && source .venv/bin/activate` and
-`export ANTHROPIC_API_KEY=...`.
-
-## Run
-
-```powershell
-python agent.py --local-only   # practice: clones upstream read-only, no GitHub account used
-python agent.py --dry-run      # creates/syncs your fork, commits locally, no push or PR
-python agent.py                # full run: pushes the branch and opens the PR on your fork
-python agent.py --model claude-sonnet-5-5   # cheaper model
-```
+## What a run produces
 
 The PR is opened as `<you>/Python: fix/issue-15633 → <you>/Python: master`.
 Nothing goes to `TheAlgorithms/Python`.
@@ -108,5 +133,5 @@ for other issues.
 ## Tests
 
 ```powershell
-python -m pytest tests
+docker run --rm -v "${PWD}:/app" --entrypoint python contrib-agent -m pytest tests
 ```
