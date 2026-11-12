@@ -23,7 +23,12 @@ RUN uv python install 3.15t \
  && python3.15t -VV
 
 COPY requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt \
+ && ln -s "$(python -c 'import claude_agent_sdk, os; print(os.path.join(os.path.dirname(claude_agent_sdk.__file__), "_bundled", "claude"))')" \
+      /usr/local/bin/claude \
+ && claude --version
+# The symlink above exposes the SDK's bundled Claude Code inside the image
+# only, so `claude setup-token` can run here instead of on the host.
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod 755 /usr/local/bin/docker-entrypoint.sh \

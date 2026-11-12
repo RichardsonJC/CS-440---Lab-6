@@ -65,7 +65,13 @@ Running in a container is also one more layer of isolation: the agent can
 only see this project folder and its own workspace volume.
 
 **1. Credentials.** Copy `.env.example` to `.env` and fill it in. `.env` is gitignored.
-- `ANTHROPIC_API_KEY`: from console.anthropic.com. A run costs well under $1.
+- Claude credentials, **one of**:
+  - `CLAUDE_CODE_OAUTH_TOKEN` (Claude Pro/Max subscription; counts against your
+    plan's usage, no API billing). After step 2, generate it inside the container:
+    `docker run --rm -it --entrypoint claude contrib-agent setup-token`. Sign in at
+    the URL it prints, paste the code back if asked, and copy the token it shows.
+  - `ANTHROPIC_API_KEY` from console.anthropic.com, billed per token. A run costs well under $1.
+  Set only one; if both are set, the API key wins.
 - `GH_TOKEN` (not needed for `--local-only`): least privilege, so the token can
   only touch your fork:
   1. Fork TheAlgorithms/Python in the browser (Fork button). Keep "copy the
