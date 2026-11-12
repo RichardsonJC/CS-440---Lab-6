@@ -1,4 +1,6 @@
 # contrib-agent
+**Fork used for the contribution:** https://github.com/RichardsonJC/Python
+**Pull request:** _(added after the live run)_
 
 An agent that resolves an issue in TheAlgorithms/Python **on your fork only**,
 following the repo's CONTRIBUTING.md. Built on the Claude Agent SDK.
