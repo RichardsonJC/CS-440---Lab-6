@@ -3,8 +3,23 @@
 **→ Read**
 ```json
 {
-  "file_path": "/home/claude/contrib-agent/work/local-only__Python/other/password.py"
+  "file_path": "/work/RichardsonJC__Python/other/password.py"
 }
+```
+
+**→ ToolSearch**
+```json
+{
+  "query": "select:mcp__contrib__run_checks,mcp__contrib__commit_and_push,mcp__contrib__open_pr",
+  "max_results": 3
+}
+```
+
+**← result**
+```
+
+
+
 ```
 
 **← result**
@@ -37,110 +52,83 @@
 26	# chars_incl= characters that must be in password
 27	# i= how many letters or characters the password length will be
 28	def alternative_password_generator(chars_incl: str, i: int) -> str:
-29	    # Password Generator = full boot with random_number, random_letters, and
-30	    # random_character FUNCTIONS
-31	    # Put your code here...
-32	    i -= len(chars_incl)
-33	    quotient = i // 3
-34	    remainder = i % 3
-35	    # chars = chars_incl + random_letters(ascii_letters, i / 3 + remainder) +
-36	    #     random_number(digits, i / 3) + random_characters(punctuation, i / 3)
-37	    chars = (
-38	        chars_incl
-39	        + random(ascii_letters, quotient + remainder)
-40	        + random(digits, quotient)
-41	        + random(punctuation, quotient)
-42	    )
-43	    list_of_chars = list(chars)
-44	    shuffle(list_of_chars)
-45	    return "".join(list_of_chars)
-46	
-47	    # random is a generalised function for letters, characters and numbers
-48	
-49	
-50	def random(chars_incl: str, i: int) -> str:
-51	    return "".join(secrets.choice(chars_incl) for _ in range(i))
-52	
-53	
-54	def is_strong_password(password: str, min_length: int = 8) -> bool:
-55	    """
-56	    This will check whether a given password is strong or not. The password must be at
-57	    least as long as the provided minimum length, and it must contain at least 1
-58	    lowercase letter, 1 uppercase letter, 1 number and 1 special character.
-59	
-60	    >>> is_strong_password('Hwea7$2!')
-61	    True
-62	    >>> is_strong_password('Sh0r1')
-63	    False
-64	    >>> is_strong_password('Hello123')
-65	    False
-66	    >>> is_strong_password('Hello1238udfhiaf038fajdvjjf!jaiuFhkqi1')
-67	    True
-68	    >>> is_strong_password('0')
-69	    False
-70	    """
-71	
-72	    if len(password) < min_length:
-73	        return False
-74	
-75	 
+29	    """
+30	    Generate a password of length ``i`` that contains all of ``chars_incl``.
+31	
+32	    >>> len(alternative_password_generator("abc", 10))
+33	    10
+34	    >>> len(alternative_password_generator("abcd", 4))
+35	    4
+36	    >>> sorted(alternative_password_generator("abcd", 4))
+37	    ['a', 'b', 'c', 'd']
+38	    >>> alternative_password_generator("abcdefgh", 5)
+39	    Traceback (most recent call last):
+40	        ...
+41	    ValueError: The password length must be at least the number of required chars
+42	    >>> alternative_password_generator("abcd", 3)
+43	    Traceback (most recent call last):
+44	        ...
+45	    ValueError: The password length must be at least the number of required chars
+46	    """
+47	    # A negative remainder would make i // 3 negative but i % 3 positive, which
+48	    # silently produces a password longer than requested.
+49	    if i < len(chars_incl):
+50	        raise ValueError(
+51	            "The password length must be at least the number of required chars"
+52	        )
+53	    i -= len(chars_incl)
+54	    quotient = i // 3
+55	    remainder = i % 3
+56	    # chars = chars_incl + random_letters(ascii_letters, i / 3 + remainder) +
+57	    #     random_number(digits, i / 3) + random_characters(punctuation, i / 3)
+58	    chars = (
+59	        chars_incl
+60	        + random(ascii_letters, quotient + remainder)
+61	        + random(digits, quotient)
+62	        + random(punctuation, quotient)
+63	    )
+64	    list_of_chars = list(chars)
+65	    shuffle(list_of_chars)
+66	    return "".join(list_of_chars)
+67	
+68	    # random is a generalised function for let
+```
+
+The file already contains a fix. I'll check whether that's an uncommitted change or already part of the branch.
+
+**→ Bash**
+```json
+{
+  "command": "git status --short"
+}
+```
+
+**← result**
+```
+(Bash completed with no output)
 ```
 
 **→ Bash**
 ```json
 {
-  "command": "python3 -c \"from other.password import alternative_password_generator as g; print(len(g('abcdefgh', 5)), len(g('abcd', 3)), len(g('abcd', 4)), len(g('ab', 10)))\"",
-  "description": "Reproduce the length bug"
+  "command": "git log --oneline -3"
 }
 ```
 
 **← result**
 ```
-8 5 4 10
+55f4775d Raise ValueError when required chars exceed password length
+30507bbe ci: validate devcontainer uv setup (#15709)
+574d100b [pre-commit.ci] pre-commit autoupdate (#15686)
 ```
 
-Reproduced: asking for 5 gives 8, and asking for 3 gives 5. Now the fix:
-
-**→ Edit**
-```json
-{
-  "replace_all": false,
-  "file_path": "/home/claude/contrib-agent/work/local-only__Python/other/password.py",
-  "old_string": "def alternative_password_generator(chars_incl: str, i: int) -> str:\n    # Password Generator = full boot with random_number, random_letters, and\n    # random_character FUNCTIONS\n    # Put your code here...\n    i -= len(chars_incl)",
-  "new_string": "def alternative_password_generator(chars_incl: str, i: int) -> str:\n    \"\"\"\n    Generate a password of length i that contains every character of chars_incl,\n    padded with random letters, digits and punctuation.\n\n    >>> password = alternative_password_generator(\"Py!\", 12)\n    >>> len(password)\n    12\n    >>> all(char in password for char in \"Py!\")\n    True\n    >>> sorted(alternative_password_generator(\"abcd\", 4))\n    ['a', 'b', 'c', 'd']\n    >>> len(alternative_password_generator(\"\", 7))\n    7\n    >>> alternative_password_generator(\"abcdefgh\", 5)\n    Traceback (most recent call last):\n        ...\n    ValueError: Password length 5 is shorter than the 8 required characters\n    >>> alternative_password_generator(\"abcd\", 3)\n    Traceback (most recent call last):\n        ...\n    ValueError: Password length 3 is shorter than the 4 required characters\n    \"\"\"\n    # Password Generator = full boot with random_number, random_letters, and\n    # random_character FUNCTIONS\n    # A negative remaining length would make quotient negative while remainder\n    # stays posi
-```
-
-**← result**
-```
-The file /home/claude/contrib-agent/work/local-only__Python/other/password.py has been updated successfully. (file state is current in your context — no need to Read it back)
-```
+The fix is already committed on this branch (55f4775d), so there's nothing new to edit. I'll confirm the fix by reproducing the issue and running the checks.
 
 **→ Bash**
 ```json
 {
-  "command": "ruff format other/password.py",
-  "description": "Format the changed file"
+  "command": "python3 -c \"\nfrom other.password import alternative_password_generator as g\nprint(len(g('abc',10)), len(g('abcd',4)))\nfor a in (('abcdefgh',5),('abcd',3)):\n    try: g(*a)\n    except ValueError as e: print('ValueError:', e)\n\""
 }
-```
-
-**← result**
-```
-1 file left unchanged
-```
-
-**→ ToolSearch**
-```json
-{
-  "query": "select:mcp__contrib__run_checks,mcp__contrib__commit_and_push,mcp__contrib__open_pr",
-  "max_results": 3
-}
-```
-
-**← result**
-```
-
-
-
 ```
 
 **→ mcp__contrib__run_checks**
@@ -150,17 +138,21 @@ The file /home/claude/contrib-agent/work/local-only__Python/other/password.py ha
 
 **← result**
 ```
+10 4
+ValueError: The password length must be at least the number of required chars
+ValueError: The password length must be at least the number of required chars
+```
+
+**← result**
+```
 ALL BLOCKING CHECKS PASS
 
 Changed files: ['other/password.py']
 
-Python used for doctests: Python 3.13.18 (main, Oct 26 2026, 14:08:19) [Clang 23.1.3 ]
-
-[NOTE] Free-threaded 3.15t not found locally; CI will run the official one.
+Python used for doctests: Python 3.15.2 free-threading build (main, Nov 11 2026, 00:19:22) [Clang 23.1.3 ]
 
 [PASS] ruff check
 All checks passed!
-warning: Support for Python 3.15 is under development and may be unstable. Enable `preview` to remove this warning.
 
 [PASS] ruff format --check
 1 file already formatted
@@ -169,6 +161,18 @@ warning: Support for Python 3.15 is under development and may be unstable. Enabl
 Test passed.
 
 [WARN] ty check (informational)
+warning[renamed-rule]: Rule `call-non-callable` has been renamed to `not-callable`
+   --> pyproject.toml:319:7
+    |
+319 | rules.call-non-callable = "ignore"
+    |       ^^^^^^^^^^^^^^^^^
+
+warning[renamed-rule]: Rule `invalid-return-type` has been renamed to `invalid-explicit-return`
+   --> pyproject.toml:321:7
+    |
+321 | rules.invalid-return-type = "ignore"
+    |       ^^^^^^^^^^^^^^^^^^^
+
 warning[renamed-rule]: Rule `unresolved-attribute` has been renamed to `missing-attribute`
    --> pyproject.toml:326:7
     |
@@ -181,7 +185,7 @@ warning[renamed-rule]: Rule `unresolved-import` has been renamed to `import-not-
 327 | rules.unresolved-import = "ignore"
     |       ^^^^^^^^^^^^^^^^^
 
-Found 2 diagnostics
+Found 4 diagnostics
 
 [PASS] pre-commit
 te-pyproject:.[all].
@@ -207,73 +211,47 @@ te-pyproject:.[all].
 [INFO] Installing environment for https://github.com/astral-sh/uv-pre-commit.
 [INFO] Once installed this environment will be reused.
 [INFO] This may take a few minutes...
-[INFO] Installing environment for https://github.com/abravalheri/validate-pyproject.
-[INFO] Once installed this environment will be reused.
-[INFO] This may take a few minutes...
-[INFO] Installing environment for https://github.com/15r10nk/matchify.
-[I
+[INFO] Installing environment
 ```
 
-**→ Bash**
-```json
-{
-  "command": "python3 -c \"from other.password import alternative_password_generator as g; print(len(g('abcd', 4)), len(g('ab', 10)))\nfor args in (('abcdefgh', 5), ('abcd', 3)):\n    try: print(len(g(*args)))\n    except ValueError as err: print('ValueError:', err)\"",
-  "description": "Re-run reproduction after fix"
-}
-```
-
-**← result**
-```
-4 10
-ValueError: Password length 5 is shorter than the 8 required characters
-ValueError: Password length 3 is shorter than the 4 required characters
-```
+The working tree is clean and the commit exists locally. I'll push it with the commit tool (it should be a no-op or just a push).
 
 **→ mcp__contrib__commit_and_push**
 ```json
 {
-  "message": "Raise ValueError when required chars exceed password length\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+  "message": "Raise ValueError when required chars exceed password length\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 }
 ```
 
 **← result**
 ```
-Committed 103bdd2a locally (dry run: not pushed).
+Committed 55f4775d and pushed to RichardsonJC/Python:fix/issue-15633.
 ```
 
 **→ mcp__contrib__open_pr**
 ```json
 {
   "title": "Raise ValueError when required chars exceed password length",
-  "body": "### Describe your change\n\n`alternative_password_generator(chars_incl, i)` returned a password longer than the requested length `i` when `len(chars_incl) > i`. Subtracting made `i` negative, so `quotient` went negative while `remainder` stayed positive, and extra characters got added. The function now raises `ValueError` when the requested length is shorter than the required characters. I also added a docstring with doctests for normal lengths, the edge case `i == len(chars_incl)`, and the failing inputs from the issue.\n\nFixes #15633\n\n### Checklist\n\n- [x] `ruff check` passes and the file is formatted with `ruff format`.\n- [x] Doctests added for valid and invalid input.\n- [x] All function parameters and return values have type hints.\n- [x] README.md and DIRECTORY.md are not edited.\n- [x] Only one file changed (`other/password.py`).\n- [x] This contribution is my own work.\n\n### Verification\n\nBefore:\n```\n>>> len(alternative_password_generator(\"abcdefgh\", 5))  # asked for 5\n8\n>>> len(alternative_password_generator(\"abcd\", 3))      # asked for 3\n5\n```\n\nAfter:\n```\n>>> len(alternative_password_generator(\"abcd\", 4))\n4\n>>> len(alternative_password_generator(\"ab\", 10))\n10\n>>> alternative_password_generator(\"abcdefgh\", 5)\nValueError: Password length 5 is shorter than the 8 required characters\n>>> alternative_password_generator(\"abcd\", 3)\nValueError: Password
+  "body": "### Describe your change\n\n`alternative_password_generator` subtracted `len(chars_incl)` from the requested length, so when the required characters were longer than the requested length `i` became negative. `i // 3` went negative while `i % 3` stayed positive, so the function silently returned a password longer than requested. It now raises `ValueError` when `i < len(chars_incl)`, and doctests cover normal lengths, the `length == len(chars_incl)` edge case and the erroneous inputs from the issue.\n\nFixes #15633\n\n### Checklist\n\n- [x] ruff check passes\n- [x] ruff format applied\n- [x] Doctests added for valid and invalid input\n- [x] Type hints on parameters and return values\n- [x] No README.md / DIRECTORY.md edits\n- [x] Single file changed (`other/password.py`)\n- [ ] This is my own work. This change was produced by an AI agent under the author's direction.\n\n### Verification\n\nBefore:\n```\nlen(alternative_password_generator(\"abcdefgh\", 5))  -> 8\nlen(alternative_password_generator(\"abcd\", 3))      -> 5\n```\n\nAfter:\n```\nalternative_password_generator(\"abcdefgh\", 5) -> ValueError: The password length must be at least the number of required chars\nalternative_password_generator(\"abcd\", 3)      -> ValueError: The password length must be at least the number of required chars\nlen(alternative_password_generator(\"abc\", 10)) -> 10\nlen(alternative_password_generator(\"abcd
 ```
 
 **← result**
 ```
-Dry run: PR not created. Title/body saved to /home/claude/contrib-agent/runs/20261111-153233/pr_body.md.
+Opened PR on the fork: https://github.com/RichardsonJC/Python/pull/1
 ```
 
-`alternative_password_generator` now raises a `ValueError` when the required characters are longer than the requested length, instead of quietly returning a longer password. Because this was a dry run, nothing was pushed and no PR was created.
+`alternative_password_generator` now raises `ValueError` when the requested length is shorter than the required characters, instead of returning an over-long password. The PR is open on the fork: https://github.com/RichardsonJC/Python/pull/1
 
-**Files changed:** `other/password.py` only.
-- **The guard:** if `i < len(chars_incl)`, it raises `ValueError("Password length {i} is shorter than the {n} required characters")`. A comment above it explains why: a negative remaining length gives a negative `quotient` but a positive `remainder`, which adds extra characters.
-- **Docstring and doctests:** they cover normal lengths, the edge case where the length equals the number of required characters (`"abcd", 4`), an empty required string, and both failing inputs from the issue (expecting `ValueError`).
-- **Small cleanup:** I removed the leftover `# Put your code here...` placeholder comment.
-- **`main()`:** left as is. Its input prompt calls the number a "max length", but it now gets the `ValueError` when the input is invalid, rather than a too-long password.
+The fix was already committed on the branch (55f4775d) when I started, so I didn't edit anything. I verified it, pushed it, and opened the PR.
 
-**Before and after:**
-
-| Call | Before | After |
-|---|---|---|
-| `("abcdefgh", 5)` | length 8 | `ValueError` |
-| `("abcd", 3)` | length 5 | `ValueError` |
-| `("abcd", 4)` | length 4 | length 4 |
-| `("ab", 10)` | length 10 | length 10 |
-
-**Checks:** ruff check, ruff format, doctests and pre-commit all passed. `ty` reported only two warnings about renamed rules in `pyproject.toml`, which are unrelated to this change. Doctests ran on Python 3.13 because free-threaded 3.15t isn't installed here; CI will run them on 3.15t.
-
-**Commit and PR:** the commit is `103bdd2a`, message "Raise ValueError when required chars exceed password length". The PR title and body, including the `Fixes #15633` line, the checklist and the before/after output, are saved to `/home/claude/contrib-agent/runs/20261111-153233/pr_body.md`.
+- **File changed:** only `other/password.py`.
+- **Fix:** the function checks `i < len(chars_incl)` first and raises `ValueError("The password length must be at least the number of required chars")`.
+- **Doctests:** they cover length 10 and the equal-length case (4 required characters, length 4). They also cover both failing inputs from the issue, `("abcdefgh", 5)` and `("abcd", 3)`.
+- **Checks:** ruff check, ruff format, doctests and pre-commit all pass. `ty` is informational and only gave four warnings about renamed rules in `pyproject.toml`, not about this file.
+- **Reproduction:** `("abc", 10)` returns length 10, `("abcd", 4)` returns length 4, and both erroneous inputs raise the `ValueError`. I didn't re-run the original buggy output, since the fix was already in place.
+- **`main()`:** I left it alone. It now gets the `ValueError` if the user enters a length shorter than their required characters.
+- **PR body:** it contains `Fixes #15633`, the checklist with "own work" left unticked and an AI-agent disclosure, and the before/after output. The "before" numbers come from the issue text.
 
 ---
-Finished: success, turns=10, cost=$0.33
+Finished: success, turns=9, cost=$0.05
 

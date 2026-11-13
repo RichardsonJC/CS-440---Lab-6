@@ -1,44 +1,38 @@
 diff --git a/other/password.py b/other/password.py
-index 6b64bdb4..2dabddca 100644
+index 6b64bdb4..5d51b86b 100644
 --- a/other/password.py
 +++ b/other/password.py
-@@ -26,9 +26,38 @@ def password_generator(length: int = 8) -> str:
+@@ -26,9 +26,30 @@ def password_generator(length: int = 8) -> str:
  # chars_incl= characters that must be in password
  # i= how many letters or characters the password length will be
  def alternative_password_generator(chars_incl: str, i: int) -> str:
+-    # Password Generator = full boot with random_number, random_letters, and
+-    # random_character FUNCTIONS
+-    # Put your code here...
 +    """
-+    Generate a password of length i that contains every character of chars_incl,
-+    padded with random letters, digits and punctuation.
++    Generate a password of length ``i`` that contains all of ``chars_incl``.
 +
-+    >>> password = alternative_password_generator("Py!", 12)
-+    >>> len(password)
-+    12
-+    >>> all(char in password for char in "Py!")
-+    True
++    >>> len(alternative_password_generator("abc", 10))
++    10
++    >>> len(alternative_password_generator("abcd", 4))
++    4
 +    >>> sorted(alternative_password_generator("abcd", 4))
 +    ['a', 'b', 'c', 'd']
-+    >>> len(alternative_password_generator("", 7))
-+    7
 +    >>> alternative_password_generator("abcdefgh", 5)
 +    Traceback (most recent call last):
 +        ...
-+    ValueError: Password length 5 is shorter than the 8 required characters
++    ValueError: The password length must be at least the number of required chars
 +    >>> alternative_password_generator("abcd", 3)
 +    Traceback (most recent call last):
 +        ...
-+    ValueError: Password length 3 is shorter than the 4 required characters
++    ValueError: The password length must be at least the number of required chars
 +    """
-     # Password Generator = full boot with random_number, random_letters, and
-     # random_character FUNCTIONS
--    # Put your code here...
-+    # A negative remaining length would make quotient negative while remainder
-+    # stays positive, silently producing a password longer than requested.
++    # A negative remainder would make i // 3 negative but i % 3 positive, which
++    # silently produces a password longer than requested.
 +    if i < len(chars_incl):
-+        msg = (
-+            f"Password length {i} is shorter than the "
-+            f"{len(chars_incl)} required characters"
++        raise ValueError(
++            "The password length must be at least the number of required chars"
 +        )
-+        raise ValueError(msg)
      i -= len(chars_incl)
      quotient = i // 3
      remainder = i % 3

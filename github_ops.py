@@ -341,12 +341,21 @@ def commit_and_push(ctx: ForkContext, message: str, dry_run: bool) -> str:
         ).returncode
         == 0
     ):
-        return "Nothing to commit."
-    # pre-commit hooks may reformat; if so, re-add and commit once more.
-    first = run(["git", "commit", "-m", message], cwd=ctx.repo_dir, check=False)
-    if first.returncode != 0:
-        run(["git", "add", "--all"], cwd=ctx.repo_dir)
-        run(["git", "commit", "-m", message], cwd=ctx.repo_dir)
+        # A previous --dry-run may already have committed the fix locally.
+        # In that case there is nothing new to commit, but the branch still
+        # needs pushing.
+        ahead = run(
+            ["git", "rev-list", "--count", f"upstream/{UPSTREAM_BRANCH}..HEAD"],
+            cwd=ctx.repo_dir,
+        ).stdout.strip()
+        if ahead == "0":
+            return "Nothing to commit."
+    else:
+        # pre-commit hooks may reformat; if so, re-add and commit once more.
+        first = run(["git", "commit", "-m", message], cwd=ctx.repo_dir, check=False)
+        if first.returncode != 0:
+            run(["git", "add", "--all"], cwd=ctx.repo_dir)
+            run(["git", "commit", "-m", message], cwd=ctx.repo_dir)
     sha = run(["git", "rev-parse", "--short", "HEAD"], cwd=ctx.repo_dir).stdout.strip()
     if dry_run:
         return f"Committed {sha} locally (dry run: not pushed)."
